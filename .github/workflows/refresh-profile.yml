@@ -16,18 +16,21 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Regenerate profile visuals using public GitHub data
+      - name: Install animation rendering libraries
+        run: python3 -m pip install --quiet 'Pillow>=10,<13' 'CairoSVG>=2.7,<3'
+      - name: Regenerate verified profile visuals and animated GIFs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PROFILE_USERNAME: jd2009-k
         run: python3 scripts/update_metrics.py
-      - name: Commit refreshed SVG files
+      - name: Commit refreshed graphics
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/*.svg
+          git add assets/*.svg assets/*.gif
           if ! git diff --cached --quiet; then
             git commit -m 'chore: refresh verified profile visuals [skip ci]'
             git push

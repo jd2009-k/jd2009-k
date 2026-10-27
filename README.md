@@ -71,13 +71,17 @@ $ echo $MINDSET
 
 <div align="center">
 
-## `~/` contribution space
+## `~/` contribution calendar
 
-<img src="assets/isometric-calendar.svg" width="100%" alt="Isometric GitHub contribution visualization" />
+<img src="assets/isometric-calendar.gif" width="100%" alt="Animated green isometric contribution calendar with current and best streak, peak daily contributions and average activity" />
 
-<img src="assets/invaders.svg" width="100%" alt="Retro arcade themed Github contribution graphic" />
+<br />
 
-<sub>Visuals refresh from GitHub's contribution calendar where API access permits. [Open GitHub's official contribution graph](https://github.com/jd2009-k?tab=overview).</sub>
+<a href="https://jay-commit-defense.lovable.app"><img src="assets/invaders.gif" width="100%" alt="Animated Space Invaders Commit Defense arcade with green pixel aliens, a moving laser and real GitHub contribution heatmap" /></a>
+
+<sub>🕹️ [PLAY INTERACTIVE ARCADE](https://jay-commit-defense.lovable.app) · [Static calendar](assets/isometric-calendar.svg) · [Static arcade art](assets/invaders.svg) · [Official contribution graph](https://github.com/jd2009-k?tab=overview)</sub>
+
+<sub>Activity and statistics are generated from verified GitHub contribution data and refreshed automatically. GIF animations may continue to play even when your operating system requests reduced motion; use the linked static graphics instead.</sub>
 
 </div>
 

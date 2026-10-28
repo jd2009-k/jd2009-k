@@ -73,11 +73,11 @@ $ echo $MINDSET
 
 ## `~/` contribution calendar
 
-<img src="assets/isometric-calendar.gif" width="100%" alt="Animated green isometric contribution calendar with current and best streak, peak daily contributions and average activity" />
+<img src="assets/isometric-calendar-v2.gif" width="100%" alt="Animated green isometric contribution calendar with current and best streak, peak daily contributions and average activity" />
 
 <br />
 
-<a href="https://jay-commit-defense.lovable.app"><img src="assets/invaders.gif" width="100%" alt="Animated Space Invaders Commit Defense arcade with green pixel aliens, a moving laser and real GitHub contribution heatmap" /></a>
+<a href="https://jay-commit-defense.lovable.app"><img src="assets/invaders-v2.gif" width="100%" alt="Animated Space Invaders Commit Defense arcade with green pixel aliens, a moving laser and real GitHub contribution heatmap" /></a>
 
 <sub>🕹️ [PLAY INTERACTIVE ARCADE](https://jay-commit-defense.lovable.app) · [Static calendar](assets/isometric-calendar.svg) · [Static arcade art](assets/invaders.svg) · [Official contribution graph](https://github.com/jd2009-k?tab=overview)</sub>
 

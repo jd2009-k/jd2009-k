@@ -261,53 +261,88 @@ def dark_shell(width,height,body,title,radius=16):
     return svg(width,height,body,title,light=False,rounded=radius)
 
 
-def contribution_isometric(data,phase=0.0,*,write_file=True):
-    """52/53 x 7 isometric terrain, anchored to *verified* GraphQL calendar days."""
-    weeks=data.get('weeks',[])[-53:]
-    days=contribution_days(data)
-    cur,longest,high,avg=streak_metrics(days)
-    total=int(data.get('totalContributions',0))
-    b="""<defs>
-      <linearGradient id="iso-floor" x2="0" y2="1"><stop stop-color="#0c1519"/><stop offset="1" stop-color="#101a21"/></linearGradient>
-      <linearGradient id="iso-glow" x2="1" y2="0"><stop stop-color="#34df8e" stop-opacity="0"/><stop offset=".5" stop-color="#36e9a0" stop-opacity=".17"/><stop offset="1" stop-color="#34df8e" stop-opacity="0"/></linearGradient>
-      <style>@media (prefers-reduced-motion: reduce) { .voxel animate { display:none; } }</style>
-    </defs>"""
-    b+=f'<rect x="35" y="105" width="764" height="305" rx="12" fill="url(#iso-floor)"/>'
-    b+=tx(41,51,'CONTRIBUTIONS CALENDAR',27,'#70caff',weight=700)
-    b+=tx(1056,51,'GITHUB  /  53-WEEK VIEW',15,'#82a5b3',anchor='end')
-    b+='<path d="M42 69H1058" stroke="#273740" stroke-width="1.4"/>'
-    b+=tx(64,128,'REAL CONTRIBUTION ACTIVITY  ·  HEIGHT = CONTRIBUTIONS',12,'#547d7d')
-    # Sort back-to-front so neighboring days naturally occlude each other.
-    render=[]
-    for col,week in enumerate(weeks):
-        for row,day in enumerate(week.get('contributionDays',[])):
-            count=max(0,int(day.get('contributionCount',0)))
-            x=71+col*12.15+row*10.1
-            y=183+col*3.52-row*5.15
-            h=2 if count==0 else min(50,4+round(6.2*math.sqrt(count)))
-            color=('#18242a','#14232a','#122126') if count==0 else (('#175c41','#115037','#0d322b') if count<=2 else ('#238d58','#1a6746','#124634') if count<=6 else ('#39bd79','#218a5a','#15583a') if count<=12 else ('#53ec93','#2a9d65','#176442'))
-            render.append((col+row,voxel(x,y,h,*color,day.get('date',''),count)))
-    for _,piece in sorted(render,key=lambda e:e[0]):
-        b+=piece
-    b+=f'<rect x="46" y="378" width="5" height="10" rx="2" fill="#3ee69c" opacity=".55"/>'
-    b+=tx(61,388,f'{total} CONTRIBUTIONS REPORTED',13,'#71c6ac',weight=700)
-    b+=tx(778,388,'LATEST YEAR',12,'#6b9c9e',anchor='end')
-    # Right-side metrics arranged to echo the supplied visual reference.
-    b+='<path d="M821 110V405" stroke="#2c393e" stroke-width="1.1"/>'
-    b+=tx(850,132,'COMMIT STREAKS',21,'#71bdf2',weight=700)
-    b+=tx(851,171,f'Current streak  {cur} day'+('' if cur==1 else 's'),18,'#cad6db')
-    b+=tx(851,204,f'Best streak     {longest} days',18,'#cad6db')
-    b+='<path d="M851 227H1045" stroke="#263b43"/>'
-    b+=tx(850,261,'CONTRIBUTIONS / DAY',21,'#71bdf2',weight=700)
-    b+=tx(851,300,f'Highest in a day   {high}',18,'#cad6db')
-    b+=tx(851,332,f'Average per day    {avg:.2f}',18,'#cad6db')
-    b+=tx(851,386,'DAILY DATA FROM GITHUB',12,'#578f7d',weight=700)
-    b+=tx(1055,432,'JAY DONGA   •   @jd2009-k',13,'#547d82',anchor='end')
-    doc=dark_shell(1100,455,b,'Animated isometric contribution calendar for Jay Donga')
-    if write_file:
-        write('isometric-calendar.svg',doc)
-    return doc
+def contribution_isometric(data, phase=0.0, *, write_file=True):
+    """Full-size 3D-looking block terrain; readable across narrow GitHub pages.
 
+    Empty days have a visible (muted) tile; height and green intensity encode
+    ONLY verified counts. A moving light sweep is baked into GIF frames.
+    """
+    weeks = data.get('weeks', [])[-53:]
+    days = contribution_days(data)
+    cur, longest, high, avg = streak_metrics(days)
+    total = int(data.get('totalContributions', 0))
+    active = sum(int(d.get('contributionCount', 0)) > 0 for d in days)
+    phase = phase % 1.0
+    b = '''<defs>
+    <linearGradient id="floor" x2=".1" y2="1"><stop stop-color="#0d1c23"/><stop offset="1" stop-color="#13282b"/></linearGradient>
+    <linearGradient id="pulse" x1="0" x2="1"><stop stop-color="#10c98f" stop-opacity="0"/><stop offset=".5" stop-color="#43fec3" stop-opacity=".17"/><stop offset="1" stop-color="#10c98f" stop-opacity="0"/></linearGradient>
+    </defs>'''
+    b += '<rect x="36" y="94" width="1028" height="408" rx="20" fill="url(#floor)" stroke="#284b50"/>'
+    b += '<path d="M56 84H1044" stroke="#27494b"/>'
+    b += tx(49,50,'3D CONTRIBUTION TERRAIN',30,'#73ebbb',weight=700)
+    b += tx(1042,49,'LIVE GITHUB / 53 WEEKS',18,'#8ebac2',anchor='end')
+    b += tx(60,128,'Every tile = 1 real day. Brighter and taller = more contributions.',16,'#83b6b5')
+    # True calendar-style 53 x 7 footprint, expanded in both visible axes.
+    # Column and weekday basis vectors are angled relative to each other.
+    # Each cell has three individually shaded surfaces and a measurable height.
+    def P(col, row):
+        return (162 + col * 14.0 - row * 16.3, 174 + col * 2.40 + row * 22.4)
+    def poly(points, color, stroke=None, sw=0):
+        ps = ' '.join(f'{x:.1f},{y:.1f}' for x,y in points)
+        s = f' stroke="{stroke}" stroke-width="{sw}"' if stroke else ''
+        return f'<polygon points="{ps}" fill="{color}"{s}/>'
+    # Subtle deck/base, with explicit 3D side walls.
+    a=P(-0.65,-0.55); z=P(53,-0.55); q=P(53,7); w=P(-0.65,7)
+    b += poly([a,z,q,w],'#0a1a20','#32665b',2)
+    b += poly([w,q,(q[0],q[1]+20),(w[0],w[1]+20)],'#122d2c')
+    b += poly([z,q,(q[0],q[1]+20),(z[0],z[1]+20)],'#153f3a')
+    grid=[]
+    light_x = 0.1 + phase*52.0
+    for col, week in enumerate(weeks):
+        for row, day in enumerate(week.get('contributionDays', [])):
+            count=max(0,int(day.get('contributionCount',0)))
+            x,y=P(col,row)
+            h = 2.8 if count==0 else min(88, 7 + 9.0*math.sqrt(count))
+            # Tiny sculpted voxel with two face shades and a top polygon.
+            # No fake contribution values: empty days are visible, but low.
+            A=(x,y-h); B=(x+13,y+2.22-h); C=(x-2.6,y+19.0-h); D=(x+10.4,y+21.2-h)
+            glow = max(0,1-abs(col-light_x)/8.0)*.19
+            if count == 0:
+                top='#20433f' if (col+row)%2 else '#1a3938'
+                front='#112d2e'; side='#163534'
+                if glow>.08: top='#275148'
+            elif count <= 2:
+                top='#39ad75'; front='#206b50'; side='#2c885f'
+            elif count <= 6:
+                top='#5cda93';front='#288963';side='#37a879'
+            elif count <= 14:
+                top='#76f2aa';front='#2aa875';side='#4fd393'
+            else:
+                top='#b1ffd1';front='#36b981';side='#66f2a4'
+            tip=esc(day.get('date',''))
+            entry = f'<g><title>{tip}: {count} contributions</title>'
+            entry += poly([C,D,(D[0],D[1]+h), (C[0],C[1]+h)],front)
+            entry += poly([B,D,(D[0],D[1]+h),(B[0],B[1]+h)],side)
+            entry += poly([A,B,D,C],top,'#0b2326',.6)
+            if count and abs(col-light_x)<1.5:
+                entry += poly([A,B,D,C],'#b1ffe4') if glow>.16 else ''
+            entry += '</g>'
+            grid.append((col*1.0+row*.09,entry))
+    # Paint back to front to preserve neighboring cell occlusion.
+    for _,g in sorted(grid,key=lambda x:x[0]): b+=g
+    b += tx(68,471,f'{total} VERIFIED CONTRIBUTIONS  /  {active} ACTIVE DAYS',18,'#83edc1',weight=700)
+    b += tx(1040,473,'DATA FROM GITHUB',16,'#6caba9',anchor='end')
+    # Big bottom metrics row instead of microscopic text in a side column.
+    labels=[('CURRENT STREAK',f'{cur} days'),('BEST STREAK',f'{longest} days'),('PEAK DAY',str(high)),('DAILY AVERAGE',f'{avg:.2f}')]
+    for i,(lab,val) in enumerate(labels):
+        x=48+i*264
+        b+=f'<rect x="{x}" y="524" width="248" height="101" rx="14" fill="#10272c" stroke="#305756" stroke-width="1.6"/>'
+        b+=tx(x+18,557,lab,17,'#8daebd',weight=700)
+        b+=tx(x+18,606,val,36,'#8ffac4',weight=700)
+    b += tx(1038,661,'JAY DONGA    //    @jd2009-k',16,'#76a1aa',anchor='end')
+    doc=dark_shell(1100,680,b,'Readable animated 3D-style contribution calendar with real GitHub counts')
+    if write_file: write('isometric-calendar.svg',doc)
+    return doc
 
 ALIEN_A=['00100100','10100101','11111111','11011011','11111111','00100100','01011010','10100101']
 ALIEN_B=['00011000','00111100','01111110','11011011','11111111','00100100','01000010','10000001']
@@ -322,101 +357,98 @@ def alien_pixels(x,y,style,unit=4.3,pattern=ALIEN_A):
     return ''.join(p)
 
 
-def contribution_invaders(data,phase=0.0,*,write_file=True):
+def contribution_invaders(data, phase=0.0, *, write_file=True):
+    """Large mobile-friendly arcade scene. Every GIF frame changes actors, shots and effects."""
     days=contribution_days(data)
     weeks=data.get('weeks',[])[-53:]
     total=int(data.get('totalContributions',0))
-    b="""<defs>
-     <pattern id="scans" width="4" height="4" patternUnits="userSpaceOnUse"><rect y="1" width="4" height="1" fill="#0c2a22" opacity=".22"/></pattern>
-     <filter id="neon"><feGaussianBlur stdDeviation="1.7"/></filter>
-     <style>@media (prefers-reduced-motion: reduce) { animate, animateTransform { display:none; } }</style>
-    </defs>"""
-    b+='<rect x="21" y="16" width="1058" height="397" rx="14" fill="#05090d" stroke="#21363e" stroke-width="2"/>'
-    b+=tx(43,42,'1UP',15,'#f4a6a6',weight=700)
-    b+=tx(43,64,f'{total:06d}',19,'#f0f5f3',weight=700)
-    b+=tx(237,42,'HIGH SCORE',15,'#f1a6a6',weight=700)
-    b+=tx(237,64,f'{total:06d}',19,'#f5faf7',weight=700)
-    b+=tx(550,47,'SPACE INVADERS  //  COMMIT DEFENSE',19,'#4beb8f',weight=700,anchor='middle')
-    b+=tx(831,42,'STAGE',15,'#f1a6a6',weight=700)
-    b+=tx(831,64,f'{len(weeks)} WEEKS',16,'#f1f5f5',weight=700)
-    b+=tx(981,42,'SHIPS',15,'#f1a6a6',weight=700)
-    for k in range(3):
-        b+=f'<polygon points="{977+k*23},57 {986+k*23},46 {996+k*23},57" fill="#48dba3"/>'
-    b+='<path d="M43 77H1057" stroke="#2b4647" stroke-width="1.2"/>'
-    # Real contribution heatmap as the arcade invasion ceiling. 53 columns x 7 rows.
+    active=sum(int(d.get('contributionCount',0))>0 for d in days)
+    phase=phase%1
+    b='''<defs>
+        <radialGradient id="arcade-glow"><stop stop-color="#102c28"/><stop offset="1" stop-color="#060b10"/></radialGradient>
+        <pattern id="scans2" width="4" height="4" patternUnits="userSpaceOnUse"><rect y="1" width="4" height="1" fill="#183e37" opacity=".18"/></pattern>
+    </defs>'''
+    b+='<rect x="18" y="14" width="1064" height="650" rx="20" fill="url(#arcade-glow)" stroke="#2b5351" stroke-width="2.5"/>'
+    b+=tx(45,49,'SPACE INVADERS',36,'#73efaa',weight=700)
+    b+=tx(45,79,'COMMIT DEFENSE // LIVE CONTRIBUTION ARCADE',18,'#8bbcae')
+    b+=tx(1052,53,f'{total:06d}',32,'#f8f4da',weight=700,anchor='end')
+    b+=tx(1052,81,'GITHUB SCORE',16,'#aabcc3',anchor='end')
+    b+='<path d="M46 100H1052" stroke="#32645a" stroke-width="2"/>'
+    # Readable 53-column grid with empty-day guides visible on mobile.
     for col,week in enumerate(weeks):
         for row,day in enumerate(week.get('contributionDays',[])):
             n=max(0,int(day.get('contributionCount',0)))
-            color='#111c23' if not n else '#205e45' if n<=2 else '#2d9461' if n<=6 else '#53d48b' if n<=12 else '#77f9a4'
-            x=65+col*18.1;y=96+row*12.0
-            b+=f'<rect x="{x:.1f}" y="{y:.1f}" width="12" height="9" rx="1.1" fill="{color}"/>'
-    b+=tx(54,190,'LIVE ACTIVITY GRID  /  {0} CONTRIBUTION DAYS'.format(sum(int(d.get('contributionCount',0))>0 for d in days)),12,'#446d59')
-    # Small starfield behind the invaders. Twinkles use SVG animation plus GIF-frame variant.
-    for i in range(27):
-        x=60+(i*151+37)%967;y=210+(i*59)%119
-        opacity=.20+.2*((i+int(phase*7))%3)
-        b+=f'<circle cx="{x}" cy="{y}" r="{.7 if i%4 else 1.3}" fill="#d1e5d6" opacity="{opacity:.2f}"><animate attributeName="opacity" values=".15;.70;.15" dur="{2+i%6}s" begin="-{i%4}s" repeatCount="indefinite"/></circle>'
-    # 8-bit characters march left-right, matching the supplied screenshot but original art.
-    off=math.sin(phase*math.tau)*12.5
-    b+=f'<g transform="translate({off:.1f} 0)">'
-    b+='<animateTransform attributeName="transform" type="translate" values="-12 0;12 0;-12 0" dur="3.5s" repeatCount="indefinite"/>'
-    lastdays=days[-35:]
-    alive=[d for d in lastdays if int(d.get('contributionCount',0))>0]
-    # Arcade ships remain decorative even with zero contributions; strong color reflects verified activity.
-    chosen=sorted(alive,key=lambda d:int(d.get('contributionCount',0)),reverse=True)[:6]
-    for i in range(6):
-        n=int(chosen[i]['contributionCount']) if i<len(chosen) else 0
-        x=205+i*130;y=236+(i%2)*12
-        color='#29644b' if n==0 else '#3bc07a' if n<=5 else '#65f6a2'
-        b+=alien_pixels(x,y,color,4.9,ALIEN_A if i%2 else ALIEN_B)
-    b+='</g>'
-    # Laser / ship with animation: fallback frame values are baked into animated GIF.
-    laser_y=321-(phase%1.0)*103
-    b+=f'<rect x="551" y="{laser_y:.1f}" width="3" height="19" rx="1" fill="#a9ffcf">'
-    b+='<animate attributeName="y" values="321;207" dur="1.4s" repeatCount="indefinite"/></rect>'
-    b+='<path d="M551 316l-7 10h-9v8h-10v5h52v-5h-10v-8h-9Z" fill="#66efad"/>'
-    b+='<rect x="547" y="323" width="9" height="15" fill="#1f8d66"/>'
-    b+='<path d="M45 353H1055" stroke="#194737" stroke-dasharray="7 6" stroke-width="1.5"/>'
-    b+=tx(44,384,'PLAYER: JAY DONGA',13,'#77aedc',weight=700)
-    b+=tx(547,384,f'YEARLY CONTRIBUTIONS: {total}',13,'#83b49f',weight=700,anchor='middle')
-    b+=tx(1050,384,'CREDIT 01  /  REAL DATA',13,'#d0a871',weight=700,anchor='end')
-    b+='<rect x="20" y="18" width="1060" height="393" fill="url(#scans)" pointer-events="none"/>'
-    doc=dark_shell(1100,432,b,'Animated Space Invaders arcade built from Jay Donga contribution data',radius=18)
-    if write_file:
-        write('invaders.svg',doc)
+            color='#263a3b' if n==0 else '#2d8664' if n<=2 else '#44bc83' if n<=6 else '#69dfa1' if n<=12 else '#a3ffca'
+            x=54+col*18.65; y=131+row*15.6
+            b+=f'<rect x="{x:.1f}" y="{y:.1f}" width="13.7" height="11.3" rx="1.8" fill="{color}"/>'
+    b+=tx(52,271,f'{active} ACTIVE DAYS  /  {len(weeks)} WEEKS OF REAL GITHUB ACTIVITY',18,'#8db8ac',weight=700)
+    b+='<path d="M46 286H1052" stroke="#31514d" stroke-width="1.5"/>'
+    # Large invading fleet, with authentic two-dimensional sprite art and motion in frame pixels.
+    # This is a retro game animation, not claimed to be 3D.
+    shift=36*math.sin(phase*math.tau)
+    bob=8*math.sin(phase*2*math.tau)
+    for row in range(2):
+        for col in range(7):
+            x=94+col*144+shift; y=326+row*94+bob
+            if x<44 or x>1011: continue
+            ink=('#52e8a0' if row==0 else '#76d9ff') if (col+row)%2==0 else '#43c98b'
+            pat=ALIEN_A if (int(phase*16)%2) == (col%2) else ALIEN_B
+            b+=alien_pixels(x,y,ink,7.0,pat)
+    # stars twinkle and change actual pixel color/position each GIF frame
+    for i in range(31):
+        x=57+(i*173+21)%980; y=305+(i*53)%215
+        lum=.22+.55*(.5+.5*math.sin(phase*math.tau*2+i*.81))
+        b+=f'<circle cx="{x}" cy="{y}" r="{.9 if i%3 else 1.7}" fill="#d9ffe8" opacity="{lum:.2f}"/>'
+    shipx=550+200*math.sin(phase*math.tau)
+    # ship shadow, pixel player and 3 separate laser bullets at different phases
+    b+=f'<ellipse cx="{shipx:.1f}" cy="600" rx="62" ry="8" fill="#0b241e"/>'
+    b+=f'<path d="M{shipx:.1f} 547l-20 18h-19v16h-19v9h116v-9h-19v-16h-19Z" fill="#9cffe2" stroke="#225a53" stroke-width="3"/>'
+    b+=f'<rect x="{shipx-10:.1f}" y="566" width="20" height="21" fill="#24a879"/>'
+    for k in range(3):
+        progress=(phase*2.3+k/3)%1
+        ly=532-progress*198
+        lx=shipx + 25*math.sin(k*3+phase*math.tau)
+        b+=f'<rect x="{lx:.1f}" y="{ly:.1f}" width="6" height="26" rx="2" fill="#c6fff1"/>'
+        b+=f'<rect x="{lx+1:.1f}" y="{ly-9:.1f}" width="4" height="8" fill="#49f7b3"/>'
+    # visible motion trail and arcade atmosphere
+    b+='<path d="M48 610H1052" stroke="#246b57" stroke-width="2" stroke-dasharray="11 8"/>'
+    b+=tx(48,642,'PLAYER 01  //  JAY DONGA',17,'#8acbee',weight=700)
+    b+=tx(1050,642,'LEVEL 53   |   3 LIVES   |   PRESS PLAY ONLINE',17,'#e3c68e',weight=700,anchor='end')
+    b+='<rect x="18" y="14" width="1064" height="650" rx="20" fill="url(#scans2)" pointer-events="none"/>'
+    doc=dark_shell(1100,681,b,'Large animated retro pixel arcade with verified GitHub heatmap')
+    if write_file: write('invaders.svg',doc)
     return doc
 
-
 def build_animated_gifs(data):
-    """GitHub embeds GIF in README reliably; animated SVG may be cached/sanitized.
+    """Render real motion into GIF pixels, including fonts and crisp alpha.
 
-    GitHub Actions installs Pillow and CairoSVG before calling this function.
-    GIFs contain real data and are built by re-rendering 12 deterministic phases.
-    No remote animation service, secrets or fake numbers.
+    SVG animation features alone do not animate under CairoSVG or all README
+    renderers. Each frame is composed independently from the same real counts.
     """
     try:
         from io import BytesIO
         import cairosvg
         from PIL import Image
     except ImportError as exc:
-        print('Optional GIF dependency unavailable; publishing animated SVG only:',str(exc))
+        print('GIF dependencies missing; keeping static SVG:',str(exc))
         return
-    for filename,func in [('isometric-calendar.gif',contribution_isometric),('invaders.gif',contribution_invaders)]:
-        imgs=[]
-        count=12
+    for filename,func in [('isometric-calendar-v2.gif',contribution_isometric),('invaders-v2.gif',contribution_invaders)]:
+        frames=[]
+        count=20
         for idx in range(count):
-            frame=func(data,idx/count,write_file=False)
-            # For iso animate a scanning highlight without falsifying any cell data.
+            part=func(data,idx/count,write_file=False)
             if filename.startswith('isometric'):
-                x=70+idx*57
-                overlay=f'<rect x="{x}" y="140" width="20" height="245" fill="#3ee69c" opacity=".02"/>'
-                frame=frame.replace('</svg>',overlay+'</svg>')
-            im=Image.open(BytesIO(cairosvg.svg2png(bytestring=frame.encode(),output_width=880,output_height=round((455 if filename.startswith('isometric') else 432)*.8))))
-            imgs.append(im.convert('RGB').quantize(colors=80,method=Image.Quantize.FASTOCTREE))
+                # A pale moving overhead sweep, placed only inside the stage.
+                x=100+idx*42
+                grad=f'<rect x="{x}" y="143" width="25" height="310" fill="#8affbf" opacity=".07"/>'
+                part=part.replace('</svg>',grad+'</svg>')
+            png=cairosvg.svg2png(bytestring=part.encode(),output_width=880,output_height=round(880*681/1100))
+            im=Image.open(BytesIO(png)).convert('RGB')
+            frames.append(im.quantize(colors=128,method=Image.Quantize.FASTOCTREE))
+        # These names are distinct from v1 so GitHub's image cache does not keep old animations.
         dest=ASSETS/filename
-        imgs[0].save(dest,save_all=True,append_images=imgs[1:],duration=140,loop=0,optimize=True,disposal=2)
-        print('Rendered',filename,round(dest.stat().st_size/1024),'KiB')
-
+        frames[0].save(dest,save_all=True,append_images=frames[1:],duration=110,loop=0,optimize=True,disposal=2)
+        print('Rendered',filename,round(dest.stat().st_size/1024),'KiB',len(frames),'frames')
 
 def identity():
     # Intentional initial-based pixel emblem, NOT a likeness or photo of the user.

@@ -89,6 +89,18 @@ $ echo $MINDSET
 
 <div align="center">
 
+## `~/` commit galaxy / 3D orbit
+
+<a href="assets/commit-galaxy-3d.svg"><img src="assets/commit-galaxy-3d.svg" width="100%" alt="Commit Galaxy: a looping 3D perspective camera orbit around a crystalline core and seven contribution-data rings" /></a>
+
+<sub>A moving 3D camera and depth-dependent perspective projection, rendered as a self-contained animated SVG for GitHub. Snapshot through October 28, 2026: 128 contributions, 21 active days. [Open full-size galaxy](assets/commit-galaxy-3d.svg). For reduced motion, use your browser's animation controls.</sub>
+
+</div>
+
+---
+
+<div align="center">
+
 ## `~/` the numbers
 
 <picture>

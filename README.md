@@ -10,6 +10,7 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-jd2009--k-151b23?style=for-the-badge&logo=github&logoColor=white)](https://github.com/jd2009-k)
 [![Mind Blogging](https://img.shields.io/badge/Mind_Blogging-Live_Beta-116451?style=for-the-badge&logo=vercel&logoColor=white)](https://mind-blogging-jd-ff4c.vercel.app/)
+[![DSA Compass](https://img.shields.io/badge/DSA_Compass-Live_Website-6D4AFF?style=for-the-badge&logo=vercel&logoColor=white)](https://dsa-compass-exact.vercel.app/)
 [![DSA](https://img.shields.io/badge/C%2B%2B-DSA_Practice-11599B?style=for-the-badge&logo=cplusplus&logoColor=white)](https://github.com/jd2009-k/c-and-DSA)
 
 <img src="https://komarev.com/ghpvc/?username=jd2009-k&style=flat-square&label=profile+views&color=39d8a5" alt="Public profile visit counter" />
@@ -35,6 +36,7 @@ $ echo $MINDSET
 <ul>
 <li><strong>Building:</strong> <a href="https://github.com/jd2009-k/mind-blogging">Mind Blogging</a>, a work-and-career reflection and progress-tracking app (beta).</li>
 <li><strong>Practicing:</strong> <a href="https://github.com/jd2009-k/c-and-DSA">C &amp; DSA</a>, programming and problem-solving exercises.</li>
+<li><strong>Building:</strong> <a href="https://dsa-compass-exact.vercel.app/">DSA Compass</a>, an animated DSA practice experience with Codeforces problems, topics, and a workspace.</li>
 <li><strong>Exploring:</strong> React, TypeScript, Supabase, deployment workflows, and responsible AI-assisted development.</li>
 </ul>
 </td></tr></table>
@@ -137,6 +139,7 @@ $ echo $MINDSET
 <p>A growing collection of programming exercises that document my progress with C++ and problem-solving fundamentals.</p>
 <p><code>C++</code> <code>Data Structures</code> <code>Algorithms</code></p>
 <p><a href="https://github.com/jd2009-k/c-and-DSA">Explore source</a></p>
+<p><strong><a href="https://dsa-compass-exact.vercel.app/">DSA Compass — Live website</a></strong> · Animated DSA learning, practice questions and topic exploration.</p>
 </td>
 </tr>
 </table>

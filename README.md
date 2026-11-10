@@ -140,7 +140,7 @@ $ echo $MINDSET
 <p>A growing collection of programming exercises that document my progress with C++ and problem-solving fundamentals.</p>
 <p><code>C++</code> <code>Data Structures</code> <code>Algorithms</code></p>
 <p><a href="https://github.com/jd2009-k/c-and-DSA">Explore source</a></p>
-<p><strong><a href="https://dsa-compass-exact.vercel.app/">DSA Compass — Live website</a></strong> · Animated DSA learning, practice questions and topic exploration. <a href="https://dsa-compass-exact.vercel.app/progress">Save your progress</a> (email account required).</p>
+<p><strong><a href="https://dsa-compass-exact.vercel.app/">DSA Compass — Live website</a></strong> · Animated DSA learning, practice questions and topic exploration. <a href="https://dsa-compass-exact.vercel.app/progress">Save your progress</a> (email account required) · <a href="https://github.com/jd2009-k/c-and-DSA/tree/main/projects/dsa-compass-progress">Progress tracker source</a>.</p>
 </td>
 </tr>
 </table>
